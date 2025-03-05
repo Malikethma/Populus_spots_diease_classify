@@ -27,7 +27,7 @@ class ExampleInstrumentedTest {
         // Context of the app under test.
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
         val resources = appContext.getResources()
-        val modelBytes = resources.openRawResource(R.raw.mobilenetv2_fp32).readBytes()
+        val modelBytes = resources.openRawResource(R.raw.resnet50_populus).readBytes()
         val env = OrtEnvironment.getEnvironment()
         env.use {
             assertNotNull(env)

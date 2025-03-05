@@ -4,12 +4,12 @@ plugins {
 }
 
 android {
-    compileSdkVersion 33
+    compileSdkVersion 35
 
     defaultConfig {
         applicationId "ai.onnxruntime.example.imageclassifier"
         minSdkVersion 24
-        targetSdkVersion 31
+        targetSdkVersion 34
         versionCode 1
         versionName "1.0"
 
@@ -35,6 +35,7 @@ android {
     buildFeatures {
         viewBinding true
     }
+    namespace 'ai.onnxruntime.example.imageclassifier'
 }
 
 dependencies {
