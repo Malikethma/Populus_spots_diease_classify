@@ -7,13 +7,14 @@ import ai.onnxruntime.*
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.os.SystemClock
+import android.util.Log
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import java.util.*
 import kotlin.math.exp
 
 
-internal data class Result(
+data class Result(
         var detectedIndices: List<Int> = emptyList(),
         var detectedScore: MutableList<Float> = mutableListOf<Float>(),
         var processTimeMs: Long = 0
@@ -108,8 +109,36 @@ internal class ORTAnalyzer(
         image.close()
     }
 
+    fun analyzeBitmap(bitmap: Bitmap){
+        val result = Result()
+        try {
+            val imgData = preProcess(bitmap)
+            val inputName = ortSession?.inputNames?.iterator()?.next()
+            val shape = longArrayOf(1, 3, 256, 256)
+            val env = OrtEnvironment.getEnvironment()
+            env.use {
+                val tensor = OnnxTensor.createTensor(env, imgData, shape)
+                val startTime = SystemClock.uptimeMillis()
+                tensor.use {
+                    val output = ortSession?.run(Collections.singletonMap(inputName, tensor))
+                    output.use {
+                        result.processTimeMs = SystemClock.uptimeMillis() - startTime
+                        @Suppress("UNCHECKED_CAST")
+                        val rawOutput = ((output?.get(0)?.value) as Array<FloatArray>)[0]
+                        val probabilities = softMax(rawOutput)
+                        result.detectedIndices = getTop3(probabilities)
+                        result.detectedScore.addAll(result.detectedIndices.map { probabilities[it] })
+                    }
+                }
+            }
+            callBack(result)
+        }catch (e: Exception){
+            Log.e("ORTAnalyzer_Bitmap", "Error in analyzeBitmap: ${e.message}")
+        }
+    }
+
     // We can switch analyzer in the app, need to make sure the native resources are freed
-    protected fun finalize() {
+    fun finalize() {
         ortSession?.close()
     }
 }
